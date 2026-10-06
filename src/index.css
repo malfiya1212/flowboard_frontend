@@ -1,0 +1,21 @@
+@import "tailwindcss";
+@layer theme {
+    --color-flowboard-blue: #0052CC;
+    /* Dominant: Primary actions & identity */
+    --color-flowboard-navy: #172B4D;
+    /* Secondary: Titles, headings, main text */
+    --color-flowboard-green: #36B37E;
+    /* Success: Completed tasks, positive feedback */
+    --color-flowboard-bg: #F4F5F7;
+    /* Background: Neutral light-gray workspace */
+    --color-flowboard-surface: #FFFFFF;
+    /* Surface: Card and form containers */
+    --color-flowboard-border: #DFE1E6;
+    /* Border: Card outlines & dividers */
+    --color-flowboard-muted: #6B778C;
+    /* Muted: Subtitles & secondary metadata */
+    --color-flowboard-danger: #DE350B;
+    /* Danger: Blocked tasks & Critical priority */
+    --color-flowboard-warning: #FFAB00;
+    /* Warning: Review state & High/Medium priority */
+}
