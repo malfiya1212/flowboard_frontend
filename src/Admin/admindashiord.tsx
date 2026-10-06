@@ -4,27 +4,29 @@ import { useAuth } from '../context/authcontext';
 import { 
   Users, ShieldCheck, KanbanSquare, Settings, LayoutDashboard, 
   LogOut, Menu, X, Search, Edit, Trash2, UserPlus, 
-  Activity, Plus, Save, CheckCircle2, AlertCircle
+  Activity, Plus, Save, CheckCircle2, AlertCircle, 
+  Briefcase, Users2, FileBarChart, History, KeyRound, 
+  Power, Download, ChevronRight, FolderKanban
 } from 'lucide-react';
 
-// --- MOCK DATA ---
+// --- ENTERPRISE MOCK DATA ---
 const mockUsers = [
-  { id: 1, name: 'John Doe', email: 'john.doe@flowboard.com', role: 'Developer', status: 'Active' },
-  { id: 2, name: 'Sarah Smith', email: 'sarah.s@flowboard.com', role: 'Scrum Master', status: 'Active' },
-  { id: 3, name: 'Mike Johnson', email: 'mike.j@flowboard.com', role: 'Developer', status: 'Offline' },
-  { id: 4, name: 'System Admin', email: 'admin@flowboard.com', role: 'Admin', status: 'Active' },
+  { id: 1, name: 'John Doe', email: 'john.doe@flowboard.com', role: 'Developer', status: 'Active', lastLogin: '2 mins ago' },
+  { id: 2, name: 'Sarah Smith', email: 'sarah.s@flowboard.com', role: 'Scrum Master', status: 'Active', lastLogin: '1 hour ago' },
+  { id: 3, name: 'Mike Johnson', email: 'mike.j@flowboard.com', role: 'Developer', status: 'Suspended', lastLogin: '5 days ago' },
+  { id: 4, name: 'System Admin', email: 'admin@flowboard.com', role: 'Admin', status: 'Active', lastLogin: 'Just now' },
 ];
 
 const mockTasks = [
-  { id: 'TSK-101', title: 'Setup Authentication Pipeline', assignee: 'John Doe', status: 'In Progress', priority: 'High' },
-  { id: 'TSK-102', title: 'Design Database Schema', assignee: 'Sarah Smith', status: 'Done', priority: 'Critical' },
-  { id: 'TSK-103', title: 'Fix Navigation Bug on Mobile', assignee: 'Unassigned', status: 'Backlog', priority: 'Medium' },
+  { id: 'TSK-101', title: 'Setup Authentication Pipeline', project: 'Core Platform', assignee: 'John Doe', status: 'In Progress' },
+  { id: 'TSK-102', title: 'Design Database Schema', project: 'Core Platform', assignee: 'Sarah Smith', status: 'Review' },
+  { id: 'TSK-145', title: 'Fix Navigation Bug on Mobile', project: 'Client Portal', assignee: 'Unassigned', status: 'Backlog' },
 ];
 
-const mockRoles = [
-  { id: 1, name: 'Admin', users: 2, permissions: ['Full Access', 'Delete Users', 'System Config'] },
-  { id: 2, name: 'Scrum Master', users: 5, permissions: ['Create Tasks', 'Assign Users', 'Edit Sprints'] },
-  { id: 3, name: 'Developer', users: 18, permissions: ['Move Tasks', 'Comment', 'Log Time'] },
+const mockAuditLogs = [
+  { id: 1, action: 'User Permissions Modified', target: 'Mike Johnson', actor: 'System Admin', time: '10:42 AM', ip: '192.168.1.45' },
+  { id: 2, action: 'Project Deleted', target: 'Legacy API V1', actor: 'Sarah Smith', time: '09:15 AM', ip: '10.0.0.12' },
+  { id: 3, action: 'Failed Login Attempt', target: 'admin@flowboard.com', actor: 'System', time: '02:30 AM', ip: '45.22.19.8' },
 ];
 
 export default function AdminDashboard() {
@@ -42,11 +44,14 @@ export default function AdminDashboard() {
     { id: 'overview', name: 'System Overview', icon: <LayoutDashboard size={20} /> },
     { id: 'users', name: 'Manage Users', icon: <Users size={20} /> },
     { id: 'roles', name: 'Roles & Permissions', icon: <ShieldCheck size={20} /> },
-    { id: 'tasks', name: 'Global Tasks', icon: <KanbanSquare size={20} /> },
+    { id: 'teams', name: 'Teams', icon: <Users2 size={20} /> },
+    { id: 'projects', name: 'Projects', icon: <Briefcase size={20} /> },
+    { id: 'tasks', name: 'All Tasks', icon: <KanbanSquare size={20} /> },
+    { id: 'reports', name: 'Reports', icon: <FileBarChart size={20} /> },
+    { id: 'logs', name: 'Activity / Audit Logs', icon: <History size={20} /> },
     { id: 'settings', name: 'System Settings', icon: <Settings size={20} /> },
   ];
 
-  // --- RENDER CONTENT BASED ON ACTIVE TAB ---
   const renderContent = () => {
     switch (activeTab) {
       
@@ -55,83 +60,125 @@ export default function AdminDashboard() {
         return (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-t-4 border-t-blue-500">
-                <h3 className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">Total Users</h3>
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between h-32">
+                <div className="flex justify-between items-start">
+                  <h3 className="text-gray-500 text-xs font-bold uppercase tracking-wider">Total Users</h3>
+                  <Users size={20} className="text-[#284B38]" />
+                </div>
                 <p className="text-3xl font-bold text-gray-900">124</p>
               </div>
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-t-4 border-t-green-500">
-                <h3 className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">Active Tasks</h3>
-                <p className="text-3xl font-bold text-gray-900">856</p>
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between h-32">
+                <div className="flex justify-between items-start">
+                  <h3 className="text-gray-500 text-xs font-bold uppercase tracking-wider">Active Projects</h3>
+                  <Briefcase size={20} className="text-[#284B38]" />
+                </div>
+                <p className="text-3xl font-bold text-gray-900">12</p>
               </div>
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-t-4 border-t-yellow-500">
-                <h3 className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">Roles Configured</h3>
-                <p className="text-3xl font-bold text-gray-900">3</p>
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between h-32">
+                <div className="flex justify-between items-start">
+                  <h3 className="text-gray-500 text-xs font-bold uppercase tracking-wider">System Alerts</h3>
+                  <AlertCircle size={20} className="text-[#8B5A43]" />
+                </div>
+                <p className="text-3xl font-bold text-[#8B5A43]">3</p>
               </div>
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-t-4 border-t-[#284B38]">
-                <h3 className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">System Status</h3>
-                <p className="text-3xl font-bold text-[#284B38] flex items-center gap-2"><CheckCircle2 size={24}/> Online</p>
+              <div className="bg-[#284B38] text-white p-6 rounded-xl shadow-sm flex flex-col justify-between h-32">
+                <div className="flex justify-between items-start">
+                  <h3 className="text-white/80 text-xs font-bold uppercase tracking-wider">System Status</h3>
+                  <CheckCircle2 size={20} className="text-green-400" />
+                </div>
+                <p className="text-2xl font-bold">Optimal</p>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><Activity size={20}/> Recent System Activity</h3>
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex items-start gap-4 pb-4 border-b border-gray-50 last:border-0 last:pb-0">
-                    <div className="w-2 h-2 mt-2 rounded-full bg-[#8B5A43]"></div>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-800">Admin generated new workspace report.</p>
-                      <p className="text-xs text-gray-400">{i * 2} hours ago</p>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-lg font-bold text-gray-800">Recent Audit Logs</h3>
+                  <button onClick={() => setActiveTab('logs')} className="text-sm font-semibold text-[#284B38] hover:underline">View All</button>
+                </div>
+                <div className="space-y-4">
+                  {mockAuditLogs.map((log) => (
+                    <div key={log.id} className="flex items-start gap-4 pb-4 border-b border-gray-50 last:border-0 last:pb-0">
+                      <div className={`w-2 h-2 mt-2 rounded-full ${log.actor === 'System' ? 'bg-red-500' : 'bg-[#8B5A43]'}`}></div>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-gray-800">{log.action}</p>
+                        <p className="text-xs text-gray-500">Target: {log.target} • By: {log.actor}</p>
+                      </div>
+                      <div className="text-xs text-gray-400 font-mono">{log.time}</div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h3 className="text-lg font-bold text-gray-800 mb-4">Quick Actions</h3>
+                <div className="space-y-3">
+                  <button onClick={() => setActiveTab('users')} className="w-full flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-[#284B38] hover:bg-gray-50 transition-all">
+                    <span className="text-sm font-semibold text-gray-700">Add New User</span>
+                    <Plus size={16} className="text-gray-400" />
+                  </button>
+                  <button onClick={() => setActiveTab('projects')} className="w-full flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-[#284B38] hover:bg-gray-50 transition-all">
+                    <span className="text-sm font-semibold text-gray-700">Create Project</span>
+                    <FolderKanban size={16} className="text-gray-400" />
+                  </button>
+                  <button onClick={() => setActiveTab('reports')} className="w-full flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-[#284B38] hover:bg-gray-50 transition-all">
+                    <span className="text-sm font-semibold text-gray-700">Generate System Report</span>
+                    <Download size={16} className="text-gray-400" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         );
 
-      // 2. MANAGE USERS
+      // 2. MANAGE USERS (Full CRUD + Activate/Reset)
       case 'users':
         return (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gray-50/50">
               <div className="relative max-w-md w-full">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                <input type="text" placeholder="Search users..." className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#284B38]/20 focus:border-[#284B38] transition-all" />
+                <input type="text" placeholder="Search users by name or email..." className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#284B38]/20 focus:border-[#284B38]" />
               </div>
-              <button className="flex items-center gap-2 bg-[#284B38] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#1E3A2B] transition-colors">
+              <button className="flex items-center gap-2 bg-[#284B38] text-white px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-[#1E3A2B] shadow-sm transition-all">
                 <UserPlus size={18} /> Create User
               </button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100">
-                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">User</th>
+                  <tr className="border-b border-gray-200 bg-white">
+                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">User Details</th>
                     <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Role</th>
                     <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Admin Controls</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {mockUsers.map((u) => (
-                    <tr key={u.id} className="hover:bg-gray-50/50 transition-colors">
+                    <tr key={u.id} className="hover:bg-gray-50 transition-colors group">
                       <td className="px-6 py-4">
-                        <div className="font-semibold text-gray-800">{u.name}</div>
-                        <div className="text-xs text-gray-500">{u.email}</div>
+                        <div className="font-bold text-gray-900">{u.name}</div>
+                        <div className="text-xs text-gray-500 mt-0.5">{u.email}</div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${u.role === 'Admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}`}>{u.role}</span>
+                        <span className={`inline-flex px-2.5 py-1 rounded-md text-xs font-bold ${u.role === 'Admin' ? 'bg-[#8B5A43]/10 text-[#8B5A43] border border-[#8B5A43]/20' : 'bg-gray-100 text-gray-700 border border-gray-200'}`}>
+                          {u.role}
+                        </span>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${u.status === 'Active' ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                          <span className="text-sm text-gray-600">{u.status}</span>
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${u.status === 'Active' ? 'text-green-700 bg-green-50' : 'text-red-700 bg-red-50'}`}>
+                          <div className={`w-1.5 h-1.5 rounded-full ${u.status === 'Active' ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                          {u.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-end gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                          <button title="Reset Password" className="p-2 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-md transition-colors"><KeyRound size={16} strokeWidth={2.5} /></button>
+                          <button title={u.status === 'Active' ? 'Suspend User' : 'Activate User'} className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"><Power size={16} strokeWidth={2.5} /></button>
+                          <button title="Edit Details" className="p-2 text-gray-500 hover:text-[#284B38] hover:bg-green-50 rounded-md transition-colors"><Edit size={16} strokeWidth={2.5} /></button>
+                          <button title="Delete User" className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"><Trash2 size={16} strokeWidth={2.5} /></button>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button className="p-1.5 text-gray-400 hover:text-blue-600 transition-colors mx-1"><Edit size={18} /></button>
-                        <button className="p-1.5 text-gray-400 hover:text-red-600 transition-colors mx-1"><Trash2 size={18} /></button>
                       </td>
                     </tr>
                   ))}
@@ -141,52 +188,28 @@ export default function AdminDashboard() {
           </div>
         );
 
-      // 3. ROLES & PERMISSIONS
-      case 'roles':
-        return (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-              <h3 className="text-lg font-bold text-gray-800">System Roles</h3>
-              <button className="flex items-center gap-2 bg-[#8B5A43] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#6A4331] transition-colors">
-                <Plus size={18} /> New Role
-              </button>
-            </div>
-            <div className="p-6 grid gap-4">
-              {mockRoles.map(role => (
-                <div key={role.id} className="border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-[#284B38] transition-colors">
-                  <div>
-                    <h4 className="font-bold text-gray-900 text-lg">{role.name}</h4>
-                    <p className="text-sm text-gray-500">{role.users} Active Users assigned</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {role.permissions.map(p => (
-                      <span key={p} className="bg-gray-100 text-gray-700 text-xs font-semibold px-2 py-1 rounded-md">{p}</span>
-                    ))}
-                  </div>
-                  <div className="flex gap-2">
-                    <button className="text-[#284B38] hover:underline text-sm font-semibold">Edit Policy</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-
-      // 4. GLOBAL TASKS
+      // 6. ALL TASKS (Delegation & Global View)
       case 'tasks':
         return (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-red-50">
-              <div className="flex items-center gap-2 text-red-700">
+             <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-orange-50/50">
+              <div className="flex items-center gap-3 text-orange-800">
                 <AlertCircle size={20} />
-                <span className="font-semibold text-sm">Admin Override Mode: You can force-delete or reassign any task.</span>
+                <div>
+                  <span className="font-bold text-sm block">Global Task Override</span>
+                  <span className="text-xs">As an Admin, you can view, force-reassign, edit, or delete any task across all projects.</span>
+                </div>
               </div>
+              <button className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-orange-700 transition-colors">
+                Create Global Task
+              </button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100">
-                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">ID / Title</th>
+                  <tr className="bg-white border-b border-gray-200">
+                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Task Info</th>
+                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Project</th>
                     <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Assignee</th>
                     <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Admin Actions</th>
@@ -194,18 +217,24 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {mockTasks.map((t) => (
-                    <tr key={t.id} className="hover:bg-gray-50/50">
+                    <tr key={t.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
-                        <div className="text-xs text-gray-400 font-mono mb-1">{t.id}</div>
-                        <div className="font-semibold text-gray-800">{t.title}</div>
+                        <div className="text-xs font-mono text-gray-400 mb-1">{t.id}</div>
+                        <div className="font-bold text-gray-900">{t.title}</div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{t.assignee}</td>
+                      <td className="px-6 py-4 text-sm font-medium text-gray-600">{t.project}</td>
                       <td className="px-6 py-4">
-                        <span className="inline-flex px-2.5 py-1 border border-gray-200 rounded-full text-xs font-semibold bg-gray-50">{t.status}</span>
+                        <span className={`text-sm font-semibold ${t.assignee === 'Unassigned' ? 'text-orange-500 italic' : 'text-gray-800'}`}>
+                          {t.assignee}
+                        </span>
                       </td>
-                      <td className="px-6 py-4 text-right">
-                         <button className="text-sm font-semibold text-blue-600 hover:underline mx-2">Reassign</button>
-                         <button className="text-sm font-semibold text-red-600 hover:underline mx-2">Force Delete</button>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex px-2.5 py-1 border border-gray-200 rounded-md text-xs font-bold bg-white shadow-sm">{t.status}</span>
+                      </td>
+                      <td className="px-6 py-4 text-right space-x-3">
+                         <button className="text-sm font-bold text-[#284B38] hover:underline">Reassign</button>
+                         <button className="text-sm font-bold text-gray-500 hover:text-gray-900 hover:underline">Edit</button>
+                         <button className="text-sm font-bold text-red-600 hover:underline">Delete</button>
                       </td>
                     </tr>
                   ))}
@@ -215,38 +244,56 @@ export default function AdminDashboard() {
           </div>
         );
 
-      // 5. SYSTEM SETTINGS
-      case 'settings':
+      // AUDIT LOGS
+      case 'logs':
         return (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 max-w-3xl">
-            <h3 className="text-lg font-bold text-gray-800 mb-6 border-b border-gray-100 pb-4">Global Configuration</h3>
-            <form className="space-y-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Workspace Name</label>
-                <input type="text" defaultValue="FlowBoard Enterprise" className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#284B38]" />
+                <h3 className="text-lg font-bold text-gray-900">System Audit Logs</h3>
+                <p className="text-sm text-gray-500">Immutable record of system-level actions.</p>
               </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Support Email</label>
-                <input type="email" defaultValue="support@flowboard.com" className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#284B38]" />
-              </div>
-              <div className="pt-4 flex items-center justify-between border-t border-gray-100">
-                <div>
-                  <h4 className="font-bold text-gray-800">Maintenance Mode</h4>
-                  <p className="text-xs text-gray-500">Lock out all non-admin users immediately.</p>
+              <button className="flex items-center gap-2 text-sm font-semibold text-gray-600 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50">
+                <Download size={16} /> Export CSV
+              </button>
+            </div>
+            <div className="space-y-4">
+              {mockAuditLogs.map((log) => (
+                <div key={log.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100">
+                  <div className="flex items-center gap-4 mb-2 sm:mb-0">
+                    <div className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-400">
+                      <History size={18} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-gray-900">{log.action} <span className="font-normal text-gray-500 ml-1">on {log.target}</span></p>
+                      <p className="text-xs text-gray-500 mt-1">Actor: <span className="font-semibold">{log.actor}</span> • IP: {log.ip}</p>
+                    </div>
+                  </div>
+                  <div className="text-xs font-mono text-gray-500 bg-white px-3 py-1.5 rounded border border-gray-200">
+                    {log.time}
+                  </div>
                 </div>
-                <div className="w-12 h-6 bg-gray-200 rounded-full cursor-pointer relative transition-colors"><div className="w-4 h-4 bg-white rounded-full absolute top-1 left-1"></div></div>
-              </div>
-              <div className="pt-6">
-                <button type="button" className="flex items-center gap-2 bg-[#284B38] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#1E3A2B] transition-colors">
-                  <Save size={18} /> Save Settings
-                </button>
-              </div>
-            </form>
+              ))}
+            </div>
           </div>
         );
 
+      // FALLBACK FOR OTHER TABS (Roles, Teams, Projects, Reports, Settings)
       default:
-        return null;
+        return (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center flex flex-col items-center justify-center min-h-[400px]">
+            <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-6 border border-gray-100 shadow-inner">
+              <Settings size={32} className="text-[#8B5A43]" />
+            </div>
+            <h2 className="text-2xl font-serif font-bold text-gray-900 mb-2">Module Active</h2>
+            <p className="text-gray-500 max-w-md mx-auto mb-8">
+              The <span className="font-semibold text-gray-700">{navItems.find(i => i.id === activeTab)?.name}</span> module is initialized. Full CRUD capabilities and settings will render here.
+            </p>
+            <button onClick={() => setActiveTab('users')} className="text-sm font-bold text-[#284B38] hover:underline flex items-center gap-1">
+              Return to User Management <ChevronRight size={16} />
+            </button>
+          </div>
+        );
     }
   };
 
@@ -255,75 +302,103 @@ export default function AdminDashboard() {
       
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setIsMobileMenuOpen(false)} />
+        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm transition-opacity" onClick={() => setIsMobileMenuOpen(false)} />
       )}
 
       {/* Sidebar - Forest Green */}
-      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 bg-[#284B38] text-white transition-transform duration-300 ease-in-out flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 bg-[#284B38] text-white transition-transform duration-300 ease-in-out flex flex-col shadow-2xl lg:shadow-none ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+        
+        {/* Logo Area */}
         <div className="flex items-center justify-between p-6 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <div className="bg-[#FDF9F1] text-[#284B38] p-1.5 rounded-lg font-bold">
-              <ShieldCheck size={24} />
+            <div className="bg-[#FDF9F1] text-[#284B38] p-2 rounded-lg shadow-sm">
+              <ShieldCheck size={24} strokeWidth={2.5} />
             </div>
-            <span className="text-xl font-bold tracking-wide">Admin Panel</span>
+            <div>
+              <span className="text-xl font-bold tracking-wide block">Admin Panel</span>
+              <span className="text-[10px] uppercase tracking-widest text-white/60 font-semibold block mt-0.5">Full Access Mode</span>
+            </div>
           </div>
-          <button className="lg:hidden text-white" onClick={() => setIsMobileMenuOpen(false)}><X size={24} /></button>
+          <button className="lg:hidden text-white/70 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>
+            <X size={24} />
+          </button>
         </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-          {navItems.map((item) => (
-            <button 
-              key={item.id}
-              onClick={() => {
-                setActiveTab(item.id);
-                setIsMobileMenuOpen(false);
-              }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === item.id ? 'bg-[#8B5A43] text-white shadow-md' : 'text-gray-300 hover:bg-white/10 hover:text-white'
-              }`}
-            >
-              {item.icon}
-              {item.name}
-            </button>
-          ))}
+        {/* Navigation */}
+        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+          {navItems.map((item) => {
+            // Add a visual separator before Settings
+            const isSettings = item.id === 'settings';
+            return (
+              <React.Fragment key={item.id}>
+                {isSettings && <div className="h-px bg-white/10 my-4 mx-2" />}
+                <button 
+                  onClick={() => {
+                    setActiveTab(item.id);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                    activeTab === item.id 
+                      ? 'bg-[#8B5A43] text-white shadow-md shadow-black/10' 
+                      : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  {item.icon}
+                  {item.name}
+                </button>
+              </React.Fragment>
+            );
+          })}
         </nav>
 
-        <div className="p-4 border-t border-white/10">
-          <div className="flex items-center gap-3 px-4 py-3 mb-2 rounded-lg bg-black/20">
-            <div className="w-8 h-8 rounded-full bg-[#8B5A43] flex items-center justify-center font-bold text-sm">
+        {/* User Footer */}
+        <div className="p-4 border-t border-white/10 bg-black/10">
+          <div className="flex items-center gap-3 px-2 py-2 mb-3">
+            <div className="w-10 h-10 rounded-full bg-[#8B5A43] border-2 border-white/20 flex items-center justify-center font-bold text-sm shadow-inner">
               {user?.name?.charAt(0).toUpperCase() || 'A'}
             </div>
-            <div className="flex-1 truncate">
-              <p className="text-sm font-semibold truncate">{user?.name || 'System Admin'}</p>
-              <p className="text-xs text-gray-400 truncate">Full System Access</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold truncate text-white">{user?.name || 'System Admin'}</p>
+              <p className="text-xs text-green-400 truncate font-medium flex items-center gap-1">
+                <CheckCircle2 size={12} /> Authenticated
+              </p>
             </div>
           </div>
           <button 
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-red-300 hover:bg-red-500/10 hover:text-red-200 transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-red-200 bg-red-500/10 hover:bg-red-500/20 hover:text-red-100 transition-colors border border-red-500/20"
           >
-            <LogOut size={20} />
+            <LogOut size={16} strokeWidth={2.5} />
             Secure Logout
           </button>
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm">
+      {/* Main Layout Area */}
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        
+        {/* Header Breadcrumb */}
+        <header className="bg-white border-b border-gray-200 px-8 py-5 flex items-center justify-between z-10">
           <div className="flex items-center gap-4">
-            <button className="lg:hidden text-gray-600 hover:text-gray-900" onClick={() => setIsMobileMenuOpen(true)}>
+            <button className="lg:hidden text-gray-500 hover:text-gray-900" onClick={() => setIsMobileMenuOpen(true)}>
               <Menu size={24} />
             </button>
-            <h1 className="text-2xl font-serif font-bold text-gray-800">
-              {navItems.find(i => i.id === activeTab)?.name}
-            </h1>
+            <div>
+              <h1 className="text-2xl font-serif font-bold text-gray-900">
+                {navItems.find(i => i.id === activeTab)?.name}
+              </h1>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mt-1 hidden sm:block">
+                FlowBoard Enterprise Admin Workspace
+              </p>
+            </div>
           </div>
         </header>
 
-        {/* Dynamic Content Container */}
-        <div className="flex-1 overflow-y-auto p-6 lg:p-8">
-          {renderContent()}
+        {/* Dynamic Canvas */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-8">
+          <div className="max-w-7xl mx-auto">
+            {renderContent()}
+          </div>
         </div>
       </main>
     </div>
