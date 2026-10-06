@@ -61,7 +61,7 @@ export default function AdminLogin() {
                 id="admin-password"
                 type={showPassword ? "text" : "password"} 
                 className="w-full bg-[#F3F4F1] border border-transparent focus:bg-white focus:border-[#8B5A43] rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-[#8B5A43]/10 pr-10 transition-all duration-200"
-                placeholder="••••••••"
+                placeholder="password123"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -79,7 +79,7 @@ export default function AdminLogin() {
 
           <button 
             type="submit" 
-            className="w-full bg-[#8B5A43] text-white rounded-lg py-3.5 mt-2 font-semibold hover:bg-[#6A4331] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md transition-all duration-200"
+            className="w-full bg-[rgb(228, 214, 207)] text-white rounded-lg py-3.5 mt-2 font-semibold hover:bg-[#6A4331] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md transition-all duration-200"
           >
             Access Control Panel
           </button>

@@ -12,7 +12,7 @@ export default function Login() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    login({ id: 'user_123', name: email.split('@')[0], email, role: 'Developer' });
+    login({ id: 'user_123', name: email.split('@')[0], email, role: 'Developer | Scrum Master' });
     navigate('/dashboard');
   };
 
@@ -83,7 +83,7 @@ export default function Login() {
               <input 
                 type="email" 
                 className="w-full bg-[#F3F4F1] border border-transparent focus:bg-white focus:border-[#284B38] rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-[#284B38]/10 transition-all duration-200"
-                placeholder="john.doe@flowboard.com"
+                placeholder="please enter valid email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
