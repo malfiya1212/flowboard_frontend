@@ -29,7 +29,7 @@ export default function App() {
           <Route path="/dashboard" element={<StandardDashboard />} />
 
           {/* Secure Admin Routes (Separated) */}
-          <Route path="/admin-login" element={<AdminLogin />} />
+          <Route path="/AdminLogin" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminDashboard />} />
         </Routes>
       </Router>
