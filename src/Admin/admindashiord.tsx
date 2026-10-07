@@ -6,7 +6,7 @@ import {
   LogOut, Menu, X, Search, Edit, Trash2, UserPlus, 
   Plus, Save, CheckCircle2, AlertCircle, 
   Briefcase, Users2, FileBarChart, History, KeyRound, 
-  Power, Download, FolderKanban, Lock
+  Power, Download, FolderKanban, Lock, Moon
 } from 'lucide-react';
 
 // --- MOCK DATA ---
@@ -51,11 +51,16 @@ export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   
-  // --- UI NAVIGATION STATE ---
+  // --- UI STATE ---
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('tasks'); 
+  const [activeTab, setActiveTab] = useState('settings'); // Defaulting to Settings to see the new toggle
   
-  // --- STATE FOR ALL ENTITIES ---
+  // --- SETTINGS STATE ---
+  const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [workspaceName, setWorkspaceName] = useState('FlowBoard Enterprise');
+
+  // --- DATA STATES ---
   const [usersData, setUsersData] = useState(initialUsers);
   const [rolesData, setRolesData] = useState(initialRoles);
   const [teamsData, setTeamsData] = useState(initialTeams);
@@ -88,9 +93,11 @@ export default function AdminDashboard() {
     navigate('/admin-login');
   };
 
-  // --- USERS FUNCTIONS ---
+  // --- VERY SIMPLE ACTION FUNCTIONS ---
+  
+  // Users
   const handleDeleteUser = (id: number, name: string) => {
-    if(window.confirm(`WARNING: Permanently delete ${name}?`)) setUsersData(usersData.filter(u => u.id !== id));
+    if(window.confirm(`Permanently delete ${name}?`)) setUsersData(usersData.filter(u => u.id !== id));
   };
   const handleToggleStatus = (id: number) => {
     setUsersData(usersData.map(u => u.id === id ? { ...u, status: u.status === 'Active' ? 'Suspended' : 'Active' } : u));
@@ -104,7 +111,7 @@ export default function AdminDashboard() {
     setIsUserModalOpen(false);
   };
 
-  // --- ROLES FUNCTIONS ---
+  // Roles
   const handleDeleteRole = (id: number, name: string) => {
     if (name === 'Admin') return alert("System Action Blocked: You cannot delete the core Admin role.");
     if(window.confirm(`Delete the ${name} role?`)) setRolesData(rolesData.filter(r => r.id !== id));
@@ -118,7 +125,7 @@ export default function AdminDashboard() {
     setIsRoleModalOpen(false);
   };
 
-  // --- TEAMS FUNCTIONS ---
+  // Teams
   const handleDeleteTeam = (id: number, name: string) => {
     if(window.confirm(`Disband the ${name} team?`)) setTeamsData(teamsData.filter(t => t.id !== id));
   };
@@ -131,7 +138,7 @@ export default function AdminDashboard() {
     setIsTeamModalOpen(false);
   };
 
-  // --- PROJECTS FUNCTIONS ---
+  // Projects
   const handleDeleteProject = (id: number, name: string) => {
     if(window.confirm(`Permanently delete the project "${name}"?`)) setProjectsData(projectsData.filter(p => p.id !== id));
   };
@@ -144,7 +151,7 @@ export default function AdminDashboard() {
     setIsProjectModalOpen(false);
   };
 
-  // --- TASKS FUNCTIONS ---
+  // Tasks
   const handleDeleteTask = (id: string, title: string) => {
     if(window.confirm(`WARNING: Force-delete the task "${title}"? This cannot be undone.`)){
       setTasksData(tasksData.filter(t => t.id !== id));
@@ -213,7 +220,8 @@ export default function AdminDashboard() {
               <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-lg font-bold text-gray-800">Recent Audit Logs</h3>
-                  <button onClick={() => setActiveTab('logs')} className="text-sm font-semibold text-[#284B38] hover:underline">View All</button>
+                  {/* THIS IS THE VIEW ALL BUTTON! It jumps to 'logs' */}
+                  <button onClick={() => setActiveTab('logs')} className="text-sm font-bold text-[#284B38] hover:underline">View All</button>
                 </div>
                 <div className="space-y-4">
                   {mockAuditLogs.map((log) => (
@@ -232,6 +240,7 @@ export default function AdminDashboard() {
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <h3 className="text-lg font-bold text-gray-800 mb-4">Quick Actions</h3>
                 <div className="space-y-3">
+                  {/* THESE SHORTCUTS OPEN THE MODALS DIRECTLY */}
                   <button onClick={() => { setActiveTab('users'); setUserModalMode('create'); setSelectedUser(null); setIsUserModalOpen(true); }} className="w-full flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-[#284B38] hover:bg-gray-50 transition-all">
                     <span className="text-sm font-semibold text-gray-700">Add New User</span>
                     <Plus size={16} className="text-gray-400" />
@@ -292,7 +301,7 @@ export default function AdminDashboard() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <button onClick={() => window.confirm(`Send password reset email to ${u.email}?`)} title="Reset Password" className="p-2 text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-md transition-colors shadow-sm"><KeyRound size={16} strokeWidth={2.5} /></button>
+                          <button onClick={() => handleResetPassword(u.email)} title="Reset Password" className="p-2 text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-md transition-colors shadow-sm"><KeyRound size={16} strokeWidth={2.5} /></button>
                           <button onClick={() => handleToggleStatus(u.id)} title={u.status === 'Active' ? 'Suspend User' : 'Activate User'} className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors shadow-sm"><Power size={16} strokeWidth={2.5} /></button>
                           <button onClick={() => { setUserModalMode('edit'); setSelectedUser(u); setIsUserModalOpen(true); }} title="Edit Details" className="p-2 text-green-600 bg-green-50 hover:bg-green-100 rounded-md transition-colors shadow-sm"><Edit size={16} strokeWidth={2.5} /></button>
                           <button onClick={() => handleDeleteUser(u.id, u.name)} title="Delete User" className="p-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-md transition-colors shadow-sm"><Trash2 size={16} strokeWidth={2.5} /></button>
@@ -538,25 +547,55 @@ export default function AdminDashboard() {
           </div>
         );
 
-      // 9. SETTINGS
+      // 9. SETTINGS (Now with fully active toggle switches!)
       case 'settings':
         return (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 max-w-3xl">
             <h3 className="text-lg font-bold text-gray-800 mb-6 border-b border-gray-100 pb-4">Global Configuration</h3>
             <form className="space-y-6">
+              
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Workspace Name</label>
-                <input type="text" defaultValue="FlowBoard Enterprise" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#284B38]" />
+                <input 
+                  type="text" 
+                  value={workspaceName} 
+                  onChange={(e) => setWorkspaceName(e.target.value)} 
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#284B38]" 
+                />
               </div>
+              
+              {/* MAINTENANCE MODE TOGGLE */}
               <div className="pt-4 flex items-center justify-between border-t border-gray-100">
                 <div>
                   <h4 className="font-bold text-gray-800">Maintenance Mode</h4>
                   <p className="text-xs text-gray-500">Lock out all non-admin users immediately.</p>
                 </div>
-                <div className="w-12 h-6 bg-gray-200 rounded-full cursor-pointer relative"><div className="w-4 h-4 bg-white rounded-full absolute top-1 left-1 shadow"></div></div>
+                <div 
+                  onClick={() => setIsMaintenanceMode(!isMaintenanceMode)} 
+                  className={`w-12 h-6 rounded-full cursor-pointer relative transition-colors duration-300 ${isMaintenanceMode ? 'bg-red-500' : 'bg-gray-200'}`}
+                >
+                  <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform duration-300 shadow ${isMaintenanceMode ? 'translate-x-7' : 'translate-x-1'}`}></div>
+                </div>
               </div>
+
+              {/* DARK MODE TOGGLE */}
+              <div className="pt-4 flex items-center justify-between border-t border-gray-100">
+                <div>
+                  <h4 className="font-bold text-gray-800 flex items-center gap-2"><Moon size={16} /> Dark Mode (Beta)</h4>
+                  <p className="text-xs text-gray-500">Switch dashboard to a darker color theme.</p>
+                </div>
+                <div 
+                  onClick={() => setIsDarkMode(!isDarkMode)} 
+                  className={`w-12 h-6 rounded-full cursor-pointer relative transition-colors duration-300 ${isDarkMode ? 'bg-[#284B38]' : 'bg-gray-200'}`}
+                >
+                  <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform duration-300 shadow ${isDarkMode ? 'translate-x-7' : 'translate-x-1'}`}></div>
+                </div>
+              </div>
+
               <div className="pt-6 border-t border-gray-100">
-                <button type="button" onClick={() => alert('Global settings saved.')} className="flex items-center gap-2 bg-[#284B38] text-white px-6 py-3 rounded-lg font-bold shadow-md hover:bg-[#1E3A2B]"><Save size={18} /> Save Global Settings</button>
+                <button type="button" onClick={() => alert('Global settings successfully saved!')} className="flex items-center gap-2 bg-[#284B38] text-white px-6 py-3 rounded-lg font-bold shadow-md hover:bg-[#1E3A2B]">
+                  <Save size={18} /> Save Global Settings
+                </button>
               </div>
             </form>
           </div>
@@ -567,7 +606,7 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="flex h-screen bg-[#F3F4F1] font-sans relative">
+    <div className={`flex h-screen font-sans relative transition-colors duration-300 ${isDarkMode ? 'bg-gray-900' : 'bg-[#F3F4F1]'}`}>
       {isMobileMenuOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm transition-opacity" onClick={() => setIsMobileMenuOpen(false)} />}
 
       <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 bg-[#284B38] text-white transition-transform duration-300 ease-in-out flex flex-col shadow-2xl lg:shadow-none ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
@@ -613,7 +652,7 @@ export default function AdminDashboard() {
             <button className="lg:hidden text-gray-500 hover:text-gray-900" onClick={() => setIsMobileMenuOpen(true)}><Menu size={24} /></button>
             <div>
               <h1 className="text-2xl font-serif font-bold text-gray-900">{navItems.find(i => i.id === activeTab)?.name}</h1>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mt-1 hidden sm:block">FlowBoard Enterprise Admin Workspace</p>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mt-1 hidden sm:block">{workspaceName} Admin Workspace</p>
             </div>
           </div>
         </header>
