@@ -12,7 +12,7 @@ export default function Login() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    login({ id: 'user_123', name: email.split('@')[0], email, role: 'Developer | Scrum Master' });
+    login({ id: 'user_123', name: email.split('@')[0], email, role: 'Developer' });
     navigate('/dashboard');
   };
 
