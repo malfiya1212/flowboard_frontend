@@ -73,7 +73,7 @@ export default function Login() {
           </div>
 
           <h2 className="text-2xl font-serif font-bold text-gray-900 mb-1">Welcome back</h2>
-          <p className="text-sm text-gray-500 mb-8">Log in to continue to your workspace.</p>
+          
 
           <form onSubmit={handleLogin} className="space-y-5">
             <div>

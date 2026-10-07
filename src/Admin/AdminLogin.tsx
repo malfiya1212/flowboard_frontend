@@ -12,7 +12,6 @@ export default function AdminLogin() {
 
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Properly mock the Admin role payload for the context
     login({ id: 'admin_01', name: 'System Admin', email, role: 'Admin' });
     navigate('/admin');
   };
@@ -77,9 +76,10 @@ export default function AdminLogin() {
             </div>
           </div>
 
+          {/* FIXED BUTTON: Changed bg-[rgb(...)] to bg-[#8B5A43] so the white text is visible */}
           <button 
             type="submit" 
-            className="w-full bg-[rgb(228, 214, 207)] text-white rounded-lg py-3.5 mt-2 font-semibold hover:bg-[#6A4331] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md transition-all duration-200"
+            className="w-full bg-[#8B5A43] text-white rounded-lg py-3.5 mt-2 font-semibold hover:bg-[#6A4331] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md transition-all duration-200"
           >
             Access Control Panel
           </button>

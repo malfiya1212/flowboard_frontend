@@ -9,7 +9,7 @@ import Signup from './pages/auth/signup';
 import ForgotPassword from './pages/auth/forgetpassword';
 
 // Admin Pages
-import AdminLogin from './Admin//AdminLogin'; // <-- New Admin Login Page
+import AdminLogin from './Admin/AdminLogin'; // <-- New Admin Login Page
 import AdminDashboard from './Admin/admindashiord';
 
 // Mock standard dashboard for Developers/Scrum Masters
@@ -27,9 +27,9 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/dashboard" element={<StandardDashboard />} />
 
-          {/* Secure Admin Routes (Separated) */}
-         <Route element="{<AdminLogin" path="/admin-login"/>
-          <Route path="/admin" element={<AdminDashboard />} />
+        {/* Secure Admin Routes (Separated) */}
+        <Route path="/AdminLogin" element={<AdminLogin />} />
+        <Route path="/admin" element={<AdminDashboard />} />
         </Routes>
       </Router>
     </AuthProvider>
