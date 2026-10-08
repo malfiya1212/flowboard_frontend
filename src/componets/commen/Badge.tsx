@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface BadgeProps {
   label: string;
   type?: 'status' | 'priority';

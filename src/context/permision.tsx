@@ -1,5 +1,7 @@
+// src/context/permision.tsx
 import React, { createContext, useContext, useState } from 'react';
 
+// 1. Export types directly from this file
 export type UserRole = 'Developer' | 'Scrum Master' | 'Admin';
 
 export interface Permissions {
@@ -19,7 +21,6 @@ interface PermissionsContextType {
 
 const PermissionsContext = createContext<PermissionsContextType | undefined>(undefined);
 
-// Backend simulation: Maps roles to dynamic permission sets
 const rolePermissionsMap: Record<UserRole, Permissions> = {
   Developer: {
     canEditTasks: true,
@@ -49,7 +50,6 @@ const rolePermissionsMap: Record<UserRole, Permissions> = {
 
 export function PermissionsProvider({ children }: { children: React.ReactNode }) {
   const [role, setRole] = useState<UserRole>('Developer');
-
   const permissions = rolePermissionsMap[role];
 
   return (

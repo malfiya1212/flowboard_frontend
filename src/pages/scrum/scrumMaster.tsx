@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import type { Task, Status, User, Priority } from '../types';
+import type { Task, Status, User, Priority } from '../../types';
+import AgileBoard from '../../componets/agile/board'; // Fixed import path & filename
 
 
 const FRONTEND_USERS: Record<string, User> = {
@@ -14,6 +15,7 @@ export default function ScrumMaster() {
   const [activeTab, setActiveTab] = useState<'BOARD' | 'BACKLOG'>('BOARD');
   const [filterUserId, setFilterUserId] = useState<string>('ALL');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
   const handleStatusChange = (taskId: string, newStatus: Status) => {
     setTasks(prevTasks => prevTasks.map(task => {
       if (task.id === taskId) {
@@ -31,21 +33,43 @@ export default function ScrumMaster() {
       return task;
     }));
   };
+
   const handleAssignUser = (taskId: string, userId: string) => {
     setTasks(prevTasks => prevTasks.map(task => 
       task.id === taskId ? { ...task, assignedUserId: userId || null } : task
     ));
   };
+
   const handleMoveToSprint = (taskId: string) => {
     const taskToMove = tasks.find(t => t.id === taskId);
+
     if (!taskToMove?.assignedUserId) {
       alert("⚠️ Please assign this task to a developer before moving it to the To Do column.");
-      return; 
+      return;
     }
 
-    handleStatusChange(taskId, 'To Do');
-    setActiveTab('BOARD'); 
+    setTasks(prevTasks =>
+      prevTasks.map(task =>
+        task.id === taskId
+          ? {
+              ...task,
+              status: 'To Do',
+              activityHistory: [
+                ...(task.activityHistory || []),
+                {
+                  action: 'Moved task to To Do',
+                  timestamp: new Date().toLocaleString(),
+                  userId: 'Scrum Master (Admin)',
+                },
+              ],
+            }
+          : task
+      )
+    );
+
+    setActiveTab('BOARD');
   };
+
   const handleCreateTask = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -53,14 +77,17 @@ export default function ScrumMaster() {
     const criteriaString = formData.get('acceptanceCriteria') as string;
     const criteriaArray = criteriaString ? criteriaString.split('\n').filter(line => line.trim() !== '') : [];
 
+    const selectedPriority = formData.get('priority') as string;
+    const mappedPriority: Priority = (selectedPriority as Priority);
+
     const newTask: Task = {
       id: `task_${Date.now()}`,
       title: formData.get('title') as string,
       description: formData.get('description') as string,
-      priority: formData.get('priority') as Priority,
+      priority: mappedPriority,
       status: formData.get('status') as Status,
-      assignedUserId: formData.get('assignedUserId') as string || null,
-      dueDate: formData.get('dueDate') as string || null,
+      assignedUserId: (formData.get('assignedUserId') as string) || null,
+      dueDate: (formData.get('dueDate') as string) || null,
       acceptanceCriteria: criteriaArray,
       createdById: 'current_scrum_master_id', 
       activityHistory: [{
@@ -77,6 +104,7 @@ export default function ScrumMaster() {
       setActiveTab('BACKLOG');
     }
   };
+
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
       if (filterUserId !== 'ALL' && task.assignedUserId !== filterUserId) return false;
@@ -133,9 +161,16 @@ export default function ScrumMaster() {
           Product Backlog ({backlogTasks.length})
         </button>
       </div>
+
       <main className="flex-1 overflow-hidden p-6 bg-gray-50">
         {activeTab === 'BOARD' ? (
-          <AgileBoard tasks={activeBoardTasks} users={FRONTEND_USERS} onStatusChange={handleStatusChange} />
+          <AgileBoard 
+            tasks={activeBoardTasks.map(task => ({ 
+              ...task, 
+              assignee: task.assignedUserId ? FRONTEND_USERS[task.assignedUserId]?.name : undefined 
+            }))} 
+            onUpdateStatus={handleStatusChange} 
+          />
         ) : (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             <table className="min-w-full divide-y divide-gray-200 text-left">
@@ -155,7 +190,7 @@ export default function ScrumMaster() {
                     <td className="px-6 py-4 text-sm text-gray-900 font-medium">{task.title}</td>
                     <td className="px-6 py-4 text-sm text-gray-500">{task.dueDate || 'No Date'}</td>
                     
-                    {/* NEW ASSIGNEE DROPDOWN */}
+                    {/* ASSIGNEE DROPDOWN */}
                     <td className="px-6 py-4 text-sm text-gray-500">
                       <select 
                         className="border border-gray-300 rounded p-1 text-sm bg-white cursor-pointer"
@@ -189,6 +224,7 @@ export default function ScrumMaster() {
           </div>
         )}
       </main>
+
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -205,10 +241,10 @@ export default function ScrumMaster() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-                  <select name="priority" className="w-full border border-gray-300 rounded-md p-2 bg-white">
+                  <select name="priority" defaultValue="Medium" className="w-full border border-gray-300 rounded-md p-2 bg-white">
                     <option value="Critical">Critical</option>
                     <option value="High">High</option>
-                    <option value="Medium" selected>Medium</option>
+                    <option value="Medium">Medium</option>
                     <option value="Low">Low</option>
                   </select>
                 </div>
