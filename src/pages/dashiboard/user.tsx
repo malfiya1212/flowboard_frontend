@@ -1,268 +1,160 @@
 import React, { useState } from 'react';
+import { CheckSquare, ArrowRight, User, LogOut, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from './context/authcontext';
-import { 
-  CheckCircle2, 
-  Clock, 
-  Play, 
-  Filter, 
-  LogOut, 
-  User, 
-  ShieldAlert, 
-  CheckSquare 
-} from 'lucide-react';
+import TaskCard from '../../componets/commen/taskcard';
 
-// Define the TypeScript interface for a task based on the SRS
 interface Task {
   id: string;
   title: string;
   description: string;
   priority: 'Critical' | 'High' | 'Medium' | 'Low';
-  status: 'To Do' | 'In Progress' | 'Blocked' | 'Review' | 'Completed';
-  dueDate: string;
+  status: 'To Do' | 'In Progress' | 'Blocked' | 'Completed' | 'Review Queue';
+  assignee: string;
 }
 
 export default function UserDashboard() {
-  const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<'board' | 'lifecycle'>('board');
 
-  // 1. LOCAL STATE: Managing tasks assigned to this developer
+  // Developer personal task list
   const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: 'TASK-101',
-      title: 'Implement JWT Authentication Refresh',
-      description: 'Ensure token persistence and silent refresh handling across protected API endpoints.',
-      priority: 'High',
-      status: 'In Progress',
-      dueDate: '2026-10-15',
-    },
-    {
-      id: 'TASK-104',
-      title: 'Refactor Task Card Component Styles',
-      description: 'Clean up Tailwind classes and ensure contrast compliance across modal views.',
-      priority: 'Medium',
-      status: 'To Do',
-      dueDate: '2026-10-18',
-    },
-    {
-      id: 'TASK-108',
-      title: 'Fix Database Connection Timeout on Startup',
-      description: 'Investigate pool exhaustion during high-concurrency test initialization.',
-      priority: 'Critical',
-      status: 'Blocked',
-      dueDate: '2026-10-12',
-    },
+    { id: 'FB-201', title: 'Refactor authentication state hook', description: 'Ensure token persistence across session expiration.', priority: 'High', status: 'To Do', assignee: 'Developer' },
+    { id: 'FB-202', title: 'Implement Tailwind v4 layout grid', description: 'Fix asymmetrical sidebar padding ratios.', priority: 'Critical', status: 'In Progress', assignee: 'Developer' },
+    { id: 'FB-203', title: 'Resolve autofill background rendering bug', description: 'Apply webkit override rules to inputs.', priority: 'Medium', status: 'Blocked', assignee: 'Developer' },
+    { id: 'FB-204', title: 'Unit test modal component event listeners', description: 'Verify Escape key handling and backdrop scroll lock.', priority: 'Low', status: 'Completed', assignee: 'Developer' },
   ]);
 
-  // 2. LOCAL STATE: Managing dropdown filter criteria
-  const [statusFilter, setStatusFilter] = useState<string>('All');
-  const [priorityFilter, setPriorityFilter] = useState<string>('All');
-
-  // HANDLER: Updates an individual task's status (CRUD - Update operation)
-  const handleStatusChange = (taskId: string, newStatus: Task['status']) => {
-    setTasks(prevTasks =>
-      prevTasks.map(task => 
-        task.id === taskId ? { ...task, status: newStatus } : task
-      )
-    );
+  const updateTaskStatus = (id: string, newStatus: Task['status']) => {
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t));
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  // FILTER LOGIC: Computes visible tasks dynamically based on user selection
-  const filteredTasks = tasks.filter(task => {
-    const matchesStatus = statusFilter === 'All' || task.status === statusFilter;
-    const matchesPriority = priorityFilter === 'All' || task.priority === priorityFilter;
-    return matchesStatus && matchesPriority;
-  });
+  const columns: Task['status'][] = ['To Do', 'In Progress', 'Blocked', 'Completed', 'Review Queue'];
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg-left)] font-sans text-gray-900">
+    <div className="flex h-screen w-screen overflow-hidden font-sans antialiased bg-[var(--color-bg-right)] text-[oklch(15%_0.02_320)]">
       
-      {/* Top Header Navigation */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-xs">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-[#284B38]/10 text-[#284B38]">
-            <CheckSquare size={22} strokeWidth={2.5} />
+      {/* SIDEBAR */}
+      <aside className="w-64 bg-[var(--color-bg-left)] border-r border-[oklch(90%_0.02_320)] flex flex-col justify-between p-4">
+        <div>
+          <div className="flex items-center gap-2.5 px-2 mb-8">
+            <div className="p-1.5 rounded-sm bg-[oklch(15%_0.02_320)] text-white">
+              <CheckSquare size={18} />
+            </div>
+            <span className="font-bold tracking-tight text-sm">Developer Workspace</span>
           </div>
-          <div>
-            <h1 className="text-xl font-serif font-bold text-gray-900 tracking-tight">Flowboard</h1>
-            <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">Developer Workspace</span>
-          </div>
+
+          <nav className="space-y-1">
+            <button 
+              onClick={() => setActiveTab('board')}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-sm text-xs font-medium transition-colors ${activeTab === 'board' ? 'bg-[oklch(15%_0.02_320)] text-[oklch(80%_0.14_20)] font-bold' : 'text-gray-700 hover:bg-gray-200/50'}`}
+            >
+              <CheckSquare size={15} />
+              <span>Personal Task Board</span>
+            </button>
+            <button 
+              onClick={() => setActiveTab('lifecycle')}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-sm text-xs font-medium transition-colors ${activeTab === 'lifecycle' ? 'bg-[oklch(15%_0.02_320)] text-[oklch(80%_0.14_20)] font-bold' : 'text-gray-700 hover:bg-gray-200/50'}`}
+            >
+              <ArrowRight size={15} />
+              <span>Workflow Rules</span>
+            </button>
+          </nav>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-sm font-medium text-gray-700 bg-[var(--color-input)] px-3 py-1.5 rounded-lg">
-            <User size={16} className="text-[#284B38]" />
-            <span>{user?.name || 'Team Member'}</span>
+        {/* User Profile */}
+        <div className="pt-4 border-t border-[oklch(90%_0.02_320)] flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-sm bg-gray-300 flex items-center justify-center font-bold text-xs">
+              <User size={14} />
+            </div>
+            <div>
+              <p className="text-xs font-bold">Developer User</p>
+              <p className="text-[10px] font-mono text-gray-500">dev@flowboard.io</p>
+            </div>
           </div>
           <button 
-            onClick={handleLogout}
-            className="flex items-center gap-1.5 text-sm font-medium text-red-600 hover:text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
+            onClick={() => navigate('/login')}
+            className="p-1.5 rounded-sm text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+            title="Sign Out"
           >
-            <LogOut size={16} />
-            <span>Logout</span>
+            <LogOut size={15} />
           </button>
         </div>
-      </header>
+      </aside>
 
-      {/* Main Dashboard Container */}
-      <main className="max-w-6xl mx-auto p-6 sm:p-8">
-        
-        <div className="mb-8">
-          <h2 className="text-3xl font-serif font-bold text-gray-900 mb-2">My Assigned Tasks</h2>
-          <p className="text-sm text-gray-600">Track your current assignments, report blocks, and update sprint progress.</p>
-        </div>
+      {/* MAIN VIEW */}
+      <main className="flex-1 flex flex-col overflow-hidden bg-white">
+        <header className="h-14 border-b border-[oklch(90%_0.02_320)] px-6 flex items-center justify-between bg-[var(--color-bg-left)]">
+          <h1 className="text-sm font-bold uppercase tracking-wide font-mono">
+            {activeTab === 'board' ? 'Assigned Developer Backlog' : 'Task State Transition Guidelines'}
+          </h1>
+          <span className="text-xs font-mono bg-white px-2.5 py-1 rounded-sm border border-[oklch(90%_0.02_320)]">
+            Active Tasks: {tasks.length}
+          </span>
+        </header>
 
-        {/* Metric Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-xs">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Assigned</span>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{tasks.length}</p>
-          </div>
-          <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-xs">
-            <span className="text-xs font-bold text-amber-600 uppercase tracking-wider">In Progress</span>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{tasks.filter(t => t.status === 'In Progress').length}</p>
-          </div>
-          <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-xs">
-            <span className="text-xs font-bold text-red-600 uppercase tracking-wider">Blocked</span>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{tasks.filter(t => t.status === 'Blocked').length}</p>
-          </div>
-          <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-xs">
-            <span className="text-xs font-bold text-green-600 uppercase tracking-wider">Completed</span>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{tasks.filter(t => t.status === 'Completed').length}</p>
-          </div>
-        </div>
+        {/* KANBOARD VIEW */}
+        {activeTab === 'board' && (
+          <div className="flex-1 p-6 overflow-x-auto bg-[var(--color-bg-right)]">
+            <div className="grid grid-cols-5 gap-3 h-full min-w-[1100px]">
+              {columns.map(statusCol => {
+                const colTasks = tasks.filter(t => t.status === statusCol);
+                return (
+                  <div key={statusCol} className="flex flex-col bg-[var(--color-bg-left)] rounded-sm border border-[oklch(90%_0.02_320)] overflow-hidden h-full">
+                    
+                    {/* Column Header */}
+                    <div className="px-3 py-2.5 border-b border-[oklch(90%_0.02_320)] bg-white flex items-center justify-between">
+                      <span className="text-xs font-mono font-bold uppercase tracking-wider text-gray-800">{statusCol}</span>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-sm bg-[var(--color-bg-right)] border border-[oklch(90%_0.02_320)]">
+                        {colTasks.length}
+                      </span>
+                    </div>
 
-        {/* Task Filtering Toolbar */}
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs flex flex-wrap items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-2 text-sm text-gray-600 font-medium">
-            <Filter size={18} className="text-[#284B38]" />
-            <span>Filter Tasks:</span>
-          </div>
-          
-          <div className="flex flex-wrap items-center gap-3">
-            <select 
-              value={statusFilter} 
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-[var(--color-input)] border border-transparent focus:border-[#284B38] rounded-lg px-3 py-2 text-sm focus:outline-none"
-            >
-              <option value="All">All Statuses</option>
-              <option value="To Do">To Do</option>
-              <option value="In Progress">In Progress</option>
-              <option value="Blocked">Blocked</option>
-              <option value="Review">Review</option>
-              <option value="Completed">Completed</option>
-            </select>
+                    {/* Task List */}
+                    <div className="flex-1 p-2.5 overflow-y-auto space-y-2.5">
+                      {colTasks.length === 0 ? (
+                        <div className="p-4 text-center text-gray-400 text-xs font-mono">No tasks</div>
+                      ) : (
+                        colTasks.map(task => (
+                          <TaskCard 
+                            key={task.id}
+                            {...task}
+                            onUpdateStatus={(newStatus) => updateTaskStatus(task.id, newStatus)}
+                            onReportBlock={() => updateTaskStatus(task.id, 'Blocked')}
+                          />
+                        ))
+                      )}
+                    </div>
 
-            <select 
-              value={priorityFilter} 
-              onChange={(e) => setPriorityFilter(e.target.value)}
-              className="bg-[var(--color-input)] border border-transparent focus:border-[#284B38] rounded-lg px-3 py-2 text-sm focus:outline-none"
-            >
-              <option value="All">All Priorities</option>
-              <option value="Critical">Critical</option>
-              <option value="High">High</option>
-              <option value="Medium">Medium</option>
-              <option value="Low">Low</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Task List Rendering */}
-        <div className="space-y-4">
-          {filteredTasks.length === 0 ? (
-            <div className="bg-white p-12 text-center rounded-xl border border-gray-200 text-gray-500">
-              No tasks found matching your filter criteria.
+                  </div>
+                );
+              })}
             </div>
-          ) : (
-            filteredTasks.map((task) => (
-              <div 
-                key={task.id} 
-                className="bg-white rounded-xl p-6 border border-gray-200 shadow-xs hover:shadow-md transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
-              >
-                <div className="space-y-2 max-w-xl">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-mono font-bold text-gray-400">{task.id}</span>
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                      task.priority === 'Critical' ? 'bg-red-100 text-red-800' :
-                      task.priority === 'High' ? 'bg-orange-100 text-orange-800' :
-                      task.priority === 'Medium' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'
-                    }`}>
-                      {task.priority}
-                    </span>
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      task.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                      task.status === 'Blocked' ? 'bg-red-100 text-red-700 font-bold' :
-                      task.status === 'In Progress' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-600'
-                    }`}>
-                      {task.status}
-                    </span>
-                  </div>
+          </div>
+        )}
 
-                  <h3 className="text-lg font-bold text-gray-900">{task.title}</h3>
-                  <p className="text-sm text-gray-600 leading-relaxed">{task.description}</p>
-                  
-                  <div className="flex items-center gap-2 text-xs text-gray-500 pt-1">
-                    <Clock size={14} />
-                    <span>Due: {task.dueDate}</span>
-                  </div>
+        {/* WORKFLOW RULES VIEW */}
+        {activeTab === 'lifecycle' && (
+          <div className="flex-1 p-8 overflow-y-auto bg-[var(--color-bg-right)] flex flex-col items-center justify-center">
+            <div className="bg-white p-8 rounded-sm border border-[oklch(90%_0.02_320)] max-w-xl w-full text-center space-y-6 font-sans">
+              <h2 className="text-sm font-mono font-bold uppercase tracking-wider">Developer Lifecycle Rules</h2>
+              <div className="space-y-3 font-mono text-xs text-left">
+                <div className="p-2.5 bg-[var(--color-bg-left)] border border-[oklch(90%_0.02_320)] rounded-sm">
+                  <strong>1. Sees Assigned Work:</strong> Review tasks assigned to your developer profile in the To Do column.
                 </div>
-
-                {/* Status Update Action Buttons */}
-                <div className="flex flex-wrap items-center gap-2 pt-4 md:pt-0 border-t md:border-t-0 border-gray-100">
-                  {task.status !== 'In Progress' && (
-                    <button 
-                      onClick={() => handleStatusChange(task.id, 'In Progress')}
-                      className="px-3 py-2 bg-amber-50 text-amber-700 hover:bg-amber-100 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1"
-                    >
-                      <Play size={14} /> Start
-                    </button>
-                  )}
-
-                  {task.status !== 'Review' && task.status !== 'Completed' && (
-                    <button 
-                      onClick={() => handleStatusChange(task.id, 'Review')}
-                      className="px-3 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-semibold rounded-lg transition-colors"
-                    >
-                      Submit Review
-                    </button>
-                  )}
-
-                  {task.status !== 'Completed' && (
-                    <button 
-                      onClick={() => handleStatusChange(task.id, 'Completed')}
-                      className="px-3 py-2 bg-[#284B38] text-white hover:bg-[#1E3A2B] text-xs font-semibold rounded-lg transition-colors flex items-center gap-1"
-                    >
-                      <CheckCircle2 size={14} /> Complete
-                    </button>
-                  )}
-
-                  {task.status !== 'Blocked' ? (
-                    <button 
-                      onClick={() => handleStatusChange(task.id, 'Blocked')}
-                      className="px-3 py-2 bg-red-50 text-red-600 hover:bg-red-100 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1"
-                    >
-                      <ShieldAlert size={14} /> Report Block
-                    </button>
-                  ) : (
-                    <button 
-                      onClick={() => handleStatusChange(task.id, 'In Progress')}
-                      className="px-3 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 text-xs font-semibold rounded-lg transition-colors"
-                    >
-                      Unblock & Resume
-                    </button>
-                  )}
+                <div className="p-2.5 bg-[var(--color-bg-left)] border border-[oklch(90%_0.02_320)] rounded-sm">
+                  <strong>2. Works on Task & Updates Status:</strong> Transition tasks from To Do $\rightarrow$ In Progress as you write code.
                 </div>
-
+                <div className="p-2.5 bg-red-50 border border-red-200 text-red-800 rounded-sm">
+                  <strong>3. Reports Blocked:</strong> If stopped by an impediment, flag it as Blocked to alert the Scrum Master.
+                </div>
+                <div className="p-2.5 bg-green-50 border border-green-200 text-green-800 rounded-sm">
+                  <strong>4. Completes Task:</strong> Finish the task and push it to the Review Queue for authorized inspection.
+                </div>
               </div>
-            ))
-          )}
-        </div>
-
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
