@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/authcontext';
+import { useAuth } from '../../context/authcontext';
 import { 
   Users, ShieldCheck, KanbanSquare, Settings, LayoutDashboard, 
   LogOut, Menu, X, Search, Edit, Trash2, UserPlus, 
