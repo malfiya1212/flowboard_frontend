@@ -20,10 +20,10 @@ export default function App() {
       <PermissionsProvider>
         <Router>
           <Routes>
-            {/* Direct Workspace Routes (No login required) */}
-            <Route path="/dashboard" element={<UserDashboard />} />
-            <Route path="/scrum-master" element={<ScrumMasterDashboard />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            {/* Correct Role-Specific Paths */}
+            <Route path="/user" element={<UserDashboard />} />
+            <Route path="/scrum" element={<ScrumMasterDashboard />} />
+            <Route path="/admin" element={<AdminDashboard />} />
             
             {/* Optional Auth Pages */}
             <Route path="/login" element={<Login />} />
@@ -31,11 +31,11 @@ export default function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/admin/login" element={<AdminLogin />} />
 
-            {/* Root now directs straight into Developer Dashboard (or change to /scrum-master) */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            {/* Root redirects straight to User Dashboard */}
+            <Route path="/" element={<Navigate to="/user" replace />} />
 
             {/* Fallback Catch-All */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/user" replace />} />
           </Routes>
         </Router>
       </PermissionsProvider>

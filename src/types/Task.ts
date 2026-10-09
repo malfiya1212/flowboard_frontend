@@ -10,7 +10,7 @@ export interface BacklogItem {
 
 export interface Task {
   id: string;
-  backlogReferenceId?: string; // Links back to the source backlog item
+  backlogReferenceId?: string; 
   title: string;
   description: string;
   priority: 'Critical' | 'High' | 'Medium' | 'Low';
