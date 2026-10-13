@@ -1,41 +1,52 @@
+import { useTheme } from '../../context/themecontext';
+import { getStatusColor } from '../../utils/statusColors';
+
 interface BadgeProps {
   label: string;
   type?: 'status' | 'priority';
+  className?: string;
 }
 
-export default function Badge({ label, type = 'status' }: BadgeProps) {
-  const getBadgeStyle = () => {
+export default function Badge({ label, type = 'status', className = '' }: BadgeProps) {
+  const { isDark } = useTheme();
+
+  const resolveColor = () => {
     if (type === 'priority') {
       switch (label) {
         case 'Critical':
-          return 'bg-red-100 text-red-800 border border-red-200 font-bold';
+        case 'CRITICAL':
+          return '#DC2626'; // Critical / Error
         case 'High':
-          return 'bg-orange-100 text-orange-800 border border-orange-200';
+        case 'HIGH':
+          return '#D97706'; // Blocked / Warning
         case 'Medium':
-          return 'bg-blue-100 text-blue-800 border border-blue-200';
+        case 'MEDIUM':
+          return '#2563EB'; // In Progress
         case 'Low':
+        case 'LOW':
         default:
-          return 'bg-gray-100 text-gray-700 border border-gray-200';
-      }
-    } else {
-      switch (label) {
-        case 'Completed':
-          return 'bg-green-100 text-green-800 border border-green-200';
-        case 'Blocked':
-          return 'bg-red-100 text-red-700 border border-red-200 font-bold';
-        case 'In Progress':
-          return 'bg-amber-100 text-amber-800 border border-amber-200';
-        case 'Review Queue':
-          return 'bg-purple-100 text-purple-800 border border-purple-200';
-        case 'To Do':
-        default:
-          return 'bg-gray-100 text-gray-600 border border-gray-200';
+          return '#64748B'; // To Do / Slate
       }
     }
+    // Task status colors consistent across all dashboards
+    return getStatusColor(label);
   };
 
+  const color = resolveColor();
+
   return (
-    <span className={`px-2 py-0.5 rounded-sm text-[10px] font-mono tracking-tight uppercase inline-flex items-center ${getBadgeStyle()}`}>
+    <span 
+      style={{
+        color: color,
+        backgroundColor: isDark ? `${color}26` : `${color}14`,
+        borderColor: isDark ? `${color}50` : `${color}38`,
+      }}
+      className={`px-2 py-0.5 rounded text-[10px] font-mono tracking-tight uppercase inline-flex items-center gap-1 border font-bold transition-colors ${className}`}
+    >
+      <span 
+        className="w-1.5 h-1.5 rounded-full shrink-0" 
+        style={{ backgroundColor: color }} 
+      />
       {label}
     </span>
   );

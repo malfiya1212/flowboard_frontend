@@ -1,13 +1,33 @@
 @import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
-    --color-primary: #0F7690;
-    --color-primary-hover: #334183;
-    --color-secondary: #3218F4;
-    --color-bg-left: #FDF9F1;
-    --color-bg-right: #E6E5DF;
-    --color-input: #F3F4F1;
+    --color-primary: #0F766E;
+    --color-primary-hover: #0D655E;
+    --color-secondary: #2563EB;
+    --color-bg-left: #FFFFFF;
+    --color-bg-right: #F4F6F8;
+    --color-input: #FFFFFF;
     --font-sans: 'Inter', system-ui, sans-serif;
     --font-serif: 'Merriweather', 'Georgia', serif;
+
+    /* Task Status Colors - consistent in both Light and Dark modes */
+    --color-status-todo: #64748B;
+    --color-status-in-progress: #2563EB;
+    --color-status-in-review: #9333EA;
+    --color-status-completed: #15803D;
+    --color-status-blocked: #D97706;
+    --color-status-critical: #DC2626;
+}
+
+:root {
+    --status-todo: #64748B;
+    --status-in-progress: #2563EB;
+    --status-in-review: #9333EA;
+    --status-completed: #15803D;
+    --status-blocked: #D97706;
+    --status-critical: #DC2626;
 }
 
 html,
@@ -16,5 +36,19 @@ body {
     padding: 0;
     width: 100%;
     min-height: 100%;
-    background-color: var(--color-bg-right);
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+html.dark,
+body.dark {
+    background-color: #0B0F17;
+    color: #F8FAFC;
+    color-scheme: dark;
+}
+
+html:not(.dark),
+body:not(.dark) {
+    background-color: #F4F6F8;
+    color: #1F2937;
+    color-scheme: light;
 }

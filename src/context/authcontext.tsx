@@ -6,7 +6,7 @@ interface User {
   id: string;
   name: string;
   email: string;
-  role: 'Admin' | 'ScrumMaster' | 'Developer';
+  role: 'Admin' | 'ScrumMaster' | 'Developer' | 'Tester';
 }
 
 // 2. Define what data our Context will provide to the app

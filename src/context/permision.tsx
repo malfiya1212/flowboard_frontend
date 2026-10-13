@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState } from 'react';
 
 // 1. Export types directly from this file
-export type UserRole = 'Developer' | 'Scrum Master' | 'Admin';
+export type UserRole = 'Developer' | 'Tester' | 'Scrum Master' | 'Admin';
 
 export interface Permissions {
   canEditTasks: boolean;
@@ -25,6 +25,14 @@ const rolePermissionsMap: Record<UserRole, Permissions> = {
   Developer: {
     canEditTasks: true,
     canSubmitReview: true,
+    canReportBlockers: true,
+    canResolveImpediments: false,
+    canManageUsers: false,
+    canAccessAdminPanel: false,
+  },
+  Tester: {
+    canEditTasks: true,
+    canSubmitReview: false,
     canReportBlockers: true,
     canResolveImpediments: false,
     canManageUsers: false,

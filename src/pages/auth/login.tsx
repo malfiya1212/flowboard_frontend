@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../../context/authcontext';
 import { Eye, EyeOff, AlertCircle, Loader2, CheckSquare } from 'lucide-react';
+import api from '../../service/api';
+import ThemeToggle from '../../componets/commen/ThemeToggle';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -11,10 +12,9 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
 
@@ -25,69 +25,87 @@ export default function Login() {
 
     setIsLoading(true);
 
-    setTimeout(() => {
-      const success = login(email, password);
-      if (success) {
-        navigate('/user');
-      } else {
-        setErrorMsg('Invalid email or password.');
+    try {
+      const response = await api.post('/auth/signin', { email, password });
+      const data = response.data;
+      const user = data.user;
+      const userRole = user?.role;
+
+      if (!userRole || userRole.toUpperCase() === 'PENDING') {
+        setErrorMsg('Your account is awaiting Admin approval and role assignment.');
         setIsLoading(false);
+        return;
       }
-    }, 800);
+
+      localStorage.setItem('flowboard_token', data.token);
+      localStorage.setItem('flowboard_user', JSON.stringify(user));
+      if (userRole) {
+        localStorage.setItem('user_role', userRole);
+      }
+
+      const normalizedRole = (userRole || '').toLowerCase().replace(/[\s_-]+/g, '');
+      if (normalizedRole === 'admin') {
+        navigate('/admin-dashboard');
+      } else if (normalizedRole.includes('scrum')) {
+        navigate('/scrumMaster'); 
+      } else if (normalizedRole.includes('dev') || normalizedRole.includes('test')) {
+        navigate('/developer-dashboard');
+      } else {
+        navigate('/user');
+      }
+
+    } catch (err: any) {
+      console.error('Login error:', err);
+      setErrorMsg(
+        err.response?.data?.message || 
+        err.response?.data?.error || 
+        'Invalid email or password.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="flex min-h-screen font-sans antialiased bg-[var(--color-bg-right)] text-[oklch(15%_0.02_320)]">
+    <div className="flex min-h-screen font-sans antialiased bg-[#F4F6F8] dark:bg-[#0B0F17] text-[#1F2937] dark:text-[#F8FAFC] relative transition-colors duration-200">
       
-      {/* GLOBAL AUTOFILL OVERRIDE */}
-      <style>{`
-        input:-webkit-autofill,
-        input:-webkit-autofill:hover,
-        input:-webkit-autofill:focus,
-        input:-webkit-autofill:active {
-          -webkit-box-shadow: 0 0 0 30px var(--color-input) inset !important;
-          -webkit-text-fill-color: oklch(15%_0.02_320) !important;
-          caret-color: oklch(15%_0.02_320);
-        }
-      `}</style>
+      {/* TOP RIGHT THEME TOGGLE */}
+      <div className="absolute top-5 right-6 z-10 flex items-center gap-2">
+        <ThemeToggle />
+      </div>
 
-      {/* LEFT SIDE - 65/35 SPLIT WORKSTATION IDENTITY */}
-      <div className="hidden md:flex flex-col justify-center items-start w-3/5 p-12 lg:pl-32 lg:pr-16 bg-[var(--color-bg-left)]">
+      {/* LEFT SIDE - 60/40 SPLIT WORKSTATION IDENTITY */}
+      <div className="hidden md:flex flex-col justify-center items-start w-3/5 p-12 lg:pl-32 lg:pr-16 bg-white dark:bg-[#0E131F] border-r border-transparent dark:border-slate-800/80 transition-colors duration-200">
         <div className="max-w-lg w-full">
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-1.5 rounded-sm bg-[oklch(15%_0.02_320)] text-[var(--color-bg-left)]">
+            <div className="p-1.5 rounded-md bg-[#0F766E] text-white">
               <CheckSquare size={20} strokeWidth={2.5} />
             </div>
-            <span className="text-xl font-bold tracking-tight">Flowboard</span>
+            <span className="text-xl font-bold tracking-tight text-[#1F2937] dark:text-white">Flowboard</span>
           </div>
 
-          <h1 className="text-4xl lg:text-5xl font-extrabold tracking-tight mb-3 leading-tight">
+          <h1 className="text-4xl lg:text-5xl font-extrabold tracking-tight mb-3 leading-tight text-[#1F2937] dark:text-white">
             Organize work.<br />Build better software.
           </h1>
           
-          <p className="text-sm text-gray-700 leading-relaxed">
-            Manage development tasks, responsibilities, priorities and progress in one organized workspace.
+          <p className="text-sm text-gray-600 dark:text-slate-400 leading-relaxed">
+            Manage development tasks, responsibilities, priorities and progress in one unified, agile workspace.
           </p>
         </div>
       </div>
 
-      {/* RIGHT SIDE - 35% FORM CONTAINER (SHARP CORNERS, 1PX BORDER) */}
-      <div className="w-full md:w-2/5 flex items-center justify-center p-6 sm:p-12 bg-[var(--color-bg-right)]">
-        <div className="bg-white rounded-sm w-full max-w-sm p-6 sm:p-8 border border-[oklch(90%_0.02_320)] shadow-none">
+      {/* RIGHT SIDE - FORM CONTAINER */}
+      <div className="w-full md:w-2/5 flex items-center justify-center p-6 sm:p-12 bg-[#F4F6F8] dark:bg-[#0B0F17] transition-colors duration-200">
+        <div className="bg-white dark:bg-slate-900 rounded-xl w-full max-w-sm p-6 sm:p-8 border border-gray-200 dark:border-slate-800 shadow-sm transition-colors duration-200">
           
-          <h2 className="text-lg font-bold tracking-tight mb-1">Welcome back</h2>
-          <p className="text-xs text-gray-600 mb-4">Sign in to your workspace.</p>
+          <h2 className="text-lg font-bold tracking-tight mb-1 text-[#1F2937] dark:text-white">Welcome back</h2>
+          <p className="text-xs text-gray-500 dark:text-slate-400 mb-4">Sign in to your workspace.</p>
 
           {/* FIXED-HEIGHT ERROR CONTAINER */}
           <div className="min-h-[42px] mb-3">
             {errorMsg && (
               <div 
-                className="p-2 rounded-sm flex items-center gap-2 text-xs font-mono"
-                style={{
-                  backgroundColor: 'oklch(15% 0.02 320)',
-                  color: 'oklch(80% 0.14 20)',
-                  border: '1px solid oklch(80% 0.14 20)'
-                }}
+                className="p-2.5 rounded-lg flex items-center gap-2 text-xs font-mono bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800"
               >
                 <AlertCircle size={14} className="flex-shrink-0" />
                 <span>{errorMsg}</span>
@@ -95,11 +113,10 @@ export default function Login() {
             )}
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-3">
-            
-            {/* Email Field - Monospace Label */}
+          <form onSubmit={handleLogin} className="space-y-3.5">
+            {/* Email Field */}
             <div>
-              <label className="block text-[11px] font-mono font-bold uppercase tracking-wider mb-1 text-gray-800">
+              <label className="block text-[11px] font-mono font-bold uppercase tracking-wider mb-1 text-gray-700 dark:text-slate-300">
                 Email Address
               </label>
               <input 
@@ -111,13 +128,13 @@ export default function Login() {
                 }}
                 placeholder="you@company.com"
                 required
-                className="w-full rounded-sm px-3 py-2 text-xs bg-[var(--color-input)] border border-[oklch(90%_0.02_320)] focus:outline-none focus:ring-1 focus:ring-[oklch(15%_0.02_320)] font-sans"
+                className="w-full rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-[#0F766E] focus:border-[#0F766E] text-[#1F2937] dark:text-white font-sans"
               />
             </div>
 
-            {/* Password Field - Monospace Label */}
+            {/* Password Field */}
             <div>
-              <label className="block text-[11px] font-mono font-bold uppercase tracking-wider mb-1 text-gray-800">
+              <label className="block text-[11px] font-mono font-bold uppercase tracking-wider mb-1 text-gray-700 dark:text-slate-300">
                 Password
               </label>
               <div className="relative">
@@ -130,12 +147,12 @@ export default function Login() {
                   }}
                   placeholder="••••••••"
                   required
-                  className="w-full rounded-sm px-3 py-2 text-xs pr-8 bg-[var(--color-input)] border border-[oklch(90%_0.02_320)] focus:outline-none focus:ring-1 focus:ring-[oklch(15%_0.02_320)] font-sans"
+                  className="w-full rounded-lg px-3 py-2 text-xs pr-8 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-[#0F766E] focus:border-[#0F766E] text-[#1F2937] dark:text-white font-sans"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-2.5 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-900 cursor-pointer"
+                  className="absolute right-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 cursor-pointer"
                 >
                   {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
@@ -149,12 +166,12 @@ export default function Login() {
                   type="checkbox" 
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-3 h-3 rounded-none text-[oklch(15%_0.02_320)] focus:ring-[oklch(15%_0.02_320)] border-gray-300 cursor-pointer"
+                  className="w-3.5 h-3.5 rounded text-[#0F766E] focus:ring-[#0F766E] border-gray-300 dark:border-slate-700 dark:bg-slate-800 cursor-pointer"
                 />
-                <span className="text-gray-800 font-medium">Remember me</span>
+                <span className="text-gray-700 dark:text-slate-300 font-medium text-[11px]">Remember me</span>
               </label>
 
-              <Link to="/forgot-password" className="font-semibold text-gray-800 hover:text-[oklch(15%_0.02_320)]">
+              <Link to="/forgot-password" className="font-semibold text-[#2563EB] dark:text-blue-400 hover:underline text-[11px]">
                 Forgot password?
               </Link>
             </div>
@@ -163,11 +180,7 @@ export default function Login() {
             <button 
               type="submit" 
               disabled={isLoading}
-              className="w-full rounded-sm py-2.5 mt-2 font-semibold shadow-none transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 text-xs"
-              style={{ 
-                backgroundColor: 'oklch(15% 0.02 320)', 
-                color: 'oklch(80% 0.14 20)'            
-              }}
+              className="w-full rounded-lg py-2.5 mt-2 font-semibold shadow-none transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 text-xs text-white bg-[#0F766E] hover:bg-[#0D655E]"
             >
               {isLoading ? (
                 <>
@@ -175,16 +188,18 @@ export default function Login() {
                   <span className="text-white">Authenticating...</span>
                 </>
               ) : (
-                <span className="tracking-wide font-bold">Login</span>
+                <span className="tracking-wide font-bold">Sign In</span>
               )}
             </button>
 
             {/* Sign Up Redirect */}
-            <div className="text-center text-xs text-gray-700 pt-3 border-t border-gray-100">
-              Don't have an account?{' '}
-              <Link to="/signup" className="font-bold underline text-[oklch(15%_0.02_320)]">
-                Sign Up
-              </Link>
+            <div className="text-center text-xs text-gray-600 dark:text-slate-400 pt-3 border-t border-gray-100 dark:border-slate-800">
+              <div>
+                Don't have an account?{' '}
+                <Link to="/signup" className="font-bold underline text-[#2563EB] dark:text-blue-400 hover:text-blue-700">
+                  Sign Up
+                </Link>
+              </div>
             </div>
 
           </form>
