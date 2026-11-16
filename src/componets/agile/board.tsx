@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { 
-  GripVertical, AlertTriangle, Calendar, Shield, 
-  ShieldAlert, X
+  GripVertical, AlertTriangle, Calendar,
+  ShieldAlert, X, Lock
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Badge from '../commen/Badge';
@@ -59,153 +59,89 @@ export function getColumnIdFromStatus(status: Task['status'] | string): ColumnId
 }
 
 /**
- * Strict check if a role is allowed to initiate a drag on a task
+ * Strict check if a role is allowed to initiate a drag on a task.
+ * - Testers can ONLY drag tasks that are already in the Review Queue.
+ * - Developers cannot drag tasks that are in the Review Queue (locked for QA).
  */
 export function isTaskDraggableByRole(task: Task, role: UserRole = 'Developer'): { canDrag: boolean; reason?: string } {
-  const normalizedRole = (role || '').toLowerCase();
+  const norm = role.toLowerCase().replace(/[\s_-]+/g, '');
   const colId = getColumnIdFromStatus(task.status);
 
-  // Scrum Master and Admin have manager override
-  if (normalizedRole.includes('admin') || normalizedRole.includes('scrum')) {
-    return { canDrag: true };
-  }
-
-  // TESTER RULES:
-  // Testers only review code and take ownership of tasks in the Review Queue.
-  // They cannot drag tasks from To Do, In Progress, or Completed.
-  if (normalizedRole.includes('test')) {
-    if (colId === 'review_queue') {
-      return { canDrag: true };
+  if (norm.includes('test')) {
+    // QA Testers may ONLY pick up tasks that are sitting in the Review Queue
+    if (colId !== 'review_queue') {
+      return {
+        canDrag: false,
+        reason: 'QA Testers can only move tasks that are in the Review Queue.'
+      };
     }
-    return {
-      canDrag: false,
-      reason: 'Locked for Tester: Testers only review tasks currently in the Review Queue. Developers manage To Do and In Progress tasks.'
-    };
-  }
-
-  // DEVELOPER RULES:
-  // Developers write the code. They can move tasks: To Do -> In Progress -> Review Queue.
-  // Once a task is in the Review Queue, the Developer is locked out and cannot move it!
-  if (colId === 'review_queue') {
-    return {
-      canDrag: false,
-      reason: 'Locked in Review Queue: Task submitted for QA. Developers cannot move tasks while in Review Queue.'
-    };
-  }
-
-  if (colId === 'completed') {
-    return {
-      canDrag: false,
-      reason: 'Locked: Completed tasks cannot be moved by Developers.'
-    };
+  } else if (norm.includes('dev')) {
+    // Developers are locked out of the Review Queue — only QA can action those
+    if (colId === 'review_queue') {
+      return {
+        canDrag: false,
+        reason: 'Developers cannot move tasks out of the Review Queue. Only QA Testers can action tasks in this stage.'
+      };
+    }
   }
 
   return { canDrag: true };
 }
 
 /**
- * Validates whether a specific status transition between column IDs is permitted for the given role
+ * Validates whether a specific status transition between column IDs is permitted for the given role.
+ *
+ * Developer rules:
+ *   - Cannot move tasks OUT of Review Queue (only Testers can).
+ *   - Cannot move tasks directly TO Completed (must pass QA first).
+ *
+ * Tester rules:
+ *   - Can ONLY move tasks that are currently in the Review Queue.
+ *   - Can move Review Queue → Completed (Pass) or Review Queue → Blocked (Reject).
  */
 export function validateRoleTransition(
   sourceColId: ColumnId,
   targetColId: ColumnId,
   role: UserRole = 'Developer'
 ): { allowed: boolean; reason?: string } {
-  if (sourceColId === targetColId) {
-    return { allowed: true };
-  }
+  const norm = role.toLowerCase().replace(/[\s_-]+/g, '');
 
-  const normalizedRole = (role || '').toLowerCase();
+  // No-op move: always allowed
+  if (sourceColId === targetColId) return { allowed: true };
 
-  // Admin / Scrum Master override
-  if (normalizedRole.includes('admin') || normalizedRole.includes('scrum')) {
-    return { allowed: true };
-  }
-
-  // ==============================================================
-  // TESTER (QA) PERMISSION RULES
-  // ==============================================================
-  if (normalizedRole.includes('test')) {
+  if (norm.includes('test')) {
+    // Testers are only authorised to work on tasks sitting in the Review Queue
     if (sourceColId !== 'review_queue') {
       return {
         allowed: false,
-        reason: 'Permission Denied: QA Testers can only move tasks that are in the Review Queue.'
+        reason: 'QA Testers can only action tasks that are in the Review Queue.'
       };
     }
-    // Testers can move Review Queue -> Completed (if pass) or Review Queue -> In Progress / Blocked (if fail)
+    // Testers may pass (Completed) or reject (Blocked) — nothing else
+    if (targetColId !== 'completed' && targetColId !== 'blocked') {
+      return {
+        allowed: false,
+        reason: 'QA Testers can only move Review Queue tasks to Completed (Pass) or Blocked (Reject/Defect).'
+      };
+    }
+  } else if (norm.includes('dev')) {
+    // Developers cannot touch tasks already in the Review Queue
+    if (sourceColId === 'review_queue') {
+      return {
+        allowed: false,
+        reason: 'Developers are locked out of the Review Queue. Only QA Testers can verify and move these tasks.'
+      };
+    }
+    // Developers cannot skip QA and mark tasks Completed directly
     if (targetColId === 'completed') {
-      return { allowed: true }; // Passed QA
+      return {
+        allowed: false,
+        reason: 'Developers cannot mark tasks as Completed directly. Tasks must pass QA verification first.'
+      };
     }
-    if (targetColId === 'in_progress') {
-      return { allowed: true }; // Rejected QA: Returned to developer to fix
-    }
-    if (targetColId === 'blocked') {
-      return { allowed: true }; // Defect logged: Moved to blocked
-    }
-    return {
-      allowed: false,
-      reason: 'Invalid Transition: QA Testers can only move Review Queue tasks to Completed (pass) or In Progress / Blocked (fail).'
-    };
   }
 
-  // ==============================================================
-  // DEVELOPER PERMISSION RULES
-  // ==============================================================
-  // Developers write code: To Do -> In Progress -> Review Queue.
-  // Locked out once in Review Queue.
-  if (sourceColId === 'review_queue') {
-    return {
-      allowed: false,
-      reason: 'Developer Locked Out: Tasks in Review Queue are locked for Developers. Only QA Testers can verify and move them.'
-    };
-  }
-
-  if (targetColId === 'completed') {
-    return {
-      allowed: false,
-      reason: 'Permission Denied: Developers cannot move tasks directly to Completed. Tasks must pass QA verification.'
-    };
-  }
-
-  if (sourceColId === 'completed') {
-    return {
-      allowed: false,
-      reason: 'Permission Denied: Developers cannot move completed tasks.'
-    };
-  }
-
-  // Allowed: To Do -> In Progress (Start Coding)
-  if (sourceColId === 'todo' && targetColId === 'in_progress') {
-    return { allowed: true };
-  }
-
-  // Allowed: In Progress -> Review Queue (Submit to QA)
-  if (sourceColId === 'in_progress' && targetColId === 'review_queue') {
-    return { allowed: true };
-  }
-
-  // Allowed: Blocked -> In Progress (Start Fixing defect/impediment)
-  if (sourceColId === 'blocked' && targetColId === 'in_progress') {
-    return { allowed: true };
-  }
-
-  // Allowed: In Progress -> Blocked (Report blocker)
-  if (sourceColId === 'in_progress' && targetColId === 'blocked') {
-    return { allowed: true };
-  }
-
-  // Disallowed: To Do -> Review Queue (Skipped In Progress)
-  if (sourceColId === 'todo' && targetColId === 'review_queue') {
-    return {
-      allowed: false,
-      reason: 'Invalid Workflow: Tasks must be moved to "In Progress" before submitting to "Review Queue".'
-    };
-  }
-
-  return {
-    allowed: false,
-    reason: `Invalid Workflow: Developers cannot move tasks from ${sourceColId.replace('_', ' ')} to ${targetColId.replace('_', ' ')}.`
-  };
+  return { allowed: true };
 }
 
 export default function Board({ tasks, userRole = 'Developer', onUpdateStatus, onUpdateTask, onSelectTask }: BoardProps) {
@@ -213,8 +149,6 @@ export default function Board({ tasks, userRole = 'Developer', onUpdateStatus, o
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
   const [dragOverColumnId, setDragOverColumnId] = useState<ColumnId | null>(null);
   const [permissionAlert, setPermissionAlert] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
-
-  const isTester = (userRole || '').toLowerCase().includes('test');
 
   // Auto-dismiss alert after 6 seconds
   useEffect(() => {
@@ -304,34 +238,6 @@ export default function Board({ tasks, userRole = 'Developer', onUpdateStatus, o
 
   return (
     <div className="flex-1 p-4 overflow-x-auto h-full flex flex-col" id="board-container">
-      
-      {/* Role Workflow Info & Permissions Banner */}
-      <div 
-        id="role-workflow-banner"
-        className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-3 px-4 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-mono shadow-2xs transition-colors shrink-0"
-      >
-        <div className="flex items-center gap-2">
-          <span className="font-bold uppercase tracking-wider text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-            <Shield size={14} className="text-[#0F766E] dark:text-teal-400" />
-            Active Role:
-          </span>
-          <span className="px-2 py-0.5 rounded font-bold border text-[11px] bg-teal-50 dark:bg-teal-950/50 text-[#0F766E] dark:text-teal-300 border-teal-200 dark:border-teal-800">
-            {userRole}
-          </span>
-        </div>
-
-        <div className="text-[11px] text-gray-600 dark:text-slate-400 flex items-center gap-1.5 flex-wrap">
-          {isTester ? (
-            <span>
-              <strong>QA Rule:</strong> Take ownership of <em>Review Queue</em> ➔ move to <strong>Completed</strong> (Pass) or <strong>In Progress</strong> (Reject defect).
-            </span>
-          ) : (
-            <span>
-              <strong>Developer Rule:</strong> <em>To Do</em> ➔ <em>In Progress</em> ➔ <em>Review Queue</em>. <strong className="text-amber-600 dark:text-amber-400">(Locked once in Review Queue)</strong>
-            </span>
-          )}
-        </div>
-      </div>
 
       {/* Permission Block Alert Toast */}
       {permissionAlert && (
@@ -412,6 +318,22 @@ export default function Board({ tasks, userRole = 'Developer', onUpdateStatus, o
                   <span className="text-xs font-mono font-bold tracking-wide text-slate-800 dark:text-slate-100">
                     {column.title}
                   </span>
+                  {/* QA-only lock badge: shown to Developers on the Review Queue column */}
+                  {column.id === 'review_queue' && (() => {
+                    const norm = userRole.toLowerCase().replace(/[\s_-]+/g, '');
+                    if (norm.includes('dev')) {
+                      return (
+                        <span
+                          className="flex items-center gap-0.5 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-purple-500/10 border border-purple-400/30 text-purple-700 dark:text-purple-400"
+                          title="Only QA Testers can action tasks in this column"
+                        >
+                          <Lock size={9} className="shrink-0" />
+                          QA ONLY
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
 
                 <span 
@@ -468,16 +390,35 @@ export default function Board({ tasks, userRole = 'Developer', onUpdateStatus, o
                           e.dataTransfer.effectAllowed = 'move';
                           setDraggingTaskId(task.id);
                         }}
-                        className={`bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg p-3 border space-y-2 shadow-xs transition-all select-none cursor-grab active:cursor-grabbing hover:shadow-sm ${
+                        onClick={() => {
+                          if (!isDraggable) {
+                            setPermissionAlert({
+                              message: dragCheck.reason || 'This task cannot be moved by your role.',
+                              type: 'error'
+                            });
+                          }
+                        }}
+                        className={`bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg p-3 border space-y-2 shadow-xs transition-all select-none ${
+                          isDraggable ? 'cursor-grab active:cursor-grabbing hover:shadow-sm' : 'cursor-not-allowed opacity-80'
+                        } ${
                           isOverdue 
                             ? 'border-red-300 dark:border-red-800/80 ring-1 ring-red-400/30' 
-                            : 'border-gray-200 dark:border-slate-700/80 hover:border-gray-300 dark:hover:border-slate-600'
+                            : isDraggable
+                              ? 'border-gray-200 dark:border-slate-700/80 hover:border-gray-300 dark:hover:border-slate-600'
+                              : 'border-slate-300 dark:border-slate-600 ring-1 ring-slate-300/60 dark:ring-slate-600/40'
                         }`}
                       >
                         {/* Header: ID and Priority */}
                         <div className="flex items-center justify-between gap-1 flex-wrap">
                           <div className="flex items-center gap-1.5">
-                            <GripVertical size={12} className="text-gray-400 dark:text-slate-500 shrink-0" />
+                            {isDraggable
+                              ? <GripVertical size={12} className="text-gray-400 dark:text-slate-500 shrink-0" />
+                              : (
+                                <span title={dragCheck.reason} className="inline-flex items-center">
+                                  <Lock size={11} className="text-slate-400 dark:text-slate-500 shrink-0" />
+                                </span>
+                              )
+                            }
                             <button 
                               type="button"
                               id={`task-id-${task.id}`}

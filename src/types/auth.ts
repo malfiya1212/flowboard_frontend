@@ -1,5 +1,5 @@
 // src/types/auth.ts
-export type UserRole = 'Developer' | 'Scrum Master' | 'Admin';
+export type UserRole = 'Member' | 'Developer' | 'Tester' | 'Scrum Master' | 'Admin';
 
 export interface Permissions {
   canEditTasks: boolean;

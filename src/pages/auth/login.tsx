@@ -18,15 +18,22 @@ export default function Login() {
     e.preventDefault();
     setErrorMsg('');
 
-    if (!email || !password) {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
+
+    if (!cleanEmail || !cleanPassword) {
       setErrorMsg('All fields are required.');
       return;
     }
 
     setIsLoading(true);
 
+    // Clear any stale session before attempting login
+    localStorage.removeItem('flowboard_token');
+    localStorage.removeItem('token');
+
     try {
-      const response = await api.post('/auth/signin', { email, password });
+      const response = await api.post('/auth/signin', { email: cleanEmail, password: cleanPassword });
       const data = response.data;
       const user = data.user;
       const userRole = user?.role;
@@ -55,12 +62,18 @@ export default function Login() {
       }
 
     } catch (err: any) {
-      console.error('Login error:', err);
-      setErrorMsg(
-        err.response?.data?.message || 
-        err.response?.data?.error || 
-        'Invalid email or password.'
-      );
+      const status = err?.response?.status;
+      const serverMsg = err?.response?.data?.message || err?.response?.data?.error;
+
+      if (status === 401) {
+        setErrorMsg(serverMsg || 'Incorrect email or password. Please try again.');
+      } else if (status === 400) {
+        setErrorMsg(serverMsg || 'Please fill in all required fields.');
+      } else if (status === 0 || err?.code === 'ERR_NETWORK') {
+        setErrorMsg('Cannot connect to server. Make sure the backend is running on port 5000.');
+      } else {
+        setErrorMsg(serverMsg || 'Login failed. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }

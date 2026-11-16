@@ -26,9 +26,13 @@ export default function AdminLogin() {
 
     setLoading(true);
 
+    // Clear any stale session before attempting login
+    localStorage.removeItem('flowboard_token');
+    localStorage.removeItem('token');
+
     try {
       // Connect to backend authentication endpoint
-      const response = await api.post('/auth/signin', { email: email.trim(), password });
+      const response = await api.post('/auth/signin', { email: email.trim().toLowerCase(), password });
       const data = response.data;
       const user = data.user;
 
@@ -56,12 +60,16 @@ export default function AdminLogin() {
       // Route to protected Admin Dashboard
       navigate('/admin-dashboard');
     } catch (err: any) {
-      console.error('Admin login error:', err);
-      setErrorMsg(
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        'Invalid administrator credentials.'
-      );
+      const status = err?.response?.status;
+      const serverMsg = err?.response?.data?.message || err?.response?.data?.error;
+
+      if (status === 401) {
+        setErrorMsg(serverMsg || 'Incorrect email or password.');
+      } else if (status === 0 || err?.code === 'ERR_NETWORK') {
+        setErrorMsg('Cannot connect to server. Make sure the backend is running on port 5000.');
+      } else {
+        setErrorMsg(serverMsg || 'Invalid administrator credentials.');
+      }
     } finally {
       setLoading(false);
     }
